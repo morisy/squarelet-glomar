@@ -16,6 +16,8 @@
       <nav>
         <ul>
           <li><a href="#overview" class="nav-item">Overview</a></li>
+          <li><a href="#billing" class="nav-item">Billing</a></li>
+          <li><a href="#logins" class="nav-item">Service Logins</a></li>
           <li><a href="#subscriptions" class="nav-item">Subscriptions</a></li>
           <li><a href="#organizations" class="nav-item">Organizations</a></li>
         </ul>
@@ -53,6 +55,9 @@
           <dt>Updated</dt>
           <dd>{{ target_user.updated_at|date:"N j, Y, P" }}</dd>
 
+          <dt>Last Login</dt>
+          <dd>{{ target_user.last_login|date:"N j, Y, P"|default:"Never" }}</dd>
+
           <dt>City</dt>
           <dd>{{ city|default:"—" }}</dd>
 
@@ -86,6 +91,39 @@
           <dt>MFA Enabled</dt>
           <dd>{% if target_user.has_mfa_enabled %}<span class="badge green">Yes</span>{% else %}No{% endif %}</dd>
         </dl>
+      </main>
+    </section>
+
+    <section id="billing">
+      <header>
+        <h2>Billing</h2>
+      </header>
+      <main>
+        <dl class="crm-fields">
+          <dt>Lifetime Spend</dt>
+          <dd><strong>{{ lifetime_spend }}</strong></dd>
+        </dl>
+        <div class="crm-chart">
+          <h4>Monthly Charges (Last 12 Months)</h4>
+          <div class="crm-chart-bars">
+            {% for month in monthly_charges %}
+            <div class="crm-chart-col">
+              <span class="crm-chart-amount">{{ month.amount_display }}</span>
+              <div class="crm-chart-bar" style="height: {{ month.bar_pct }}%"></div>
+              <span class="crm-chart-label">{{ month.short_label }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <section id="logins">
+      <header>
+        <h2>Service Logins</h2>
+      </header>
+      <main>
+        <div id="login-chart-container" data-chart='{{ login_chart_json }}'></div>
       </main>
     </section>
 
