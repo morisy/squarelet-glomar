@@ -199,6 +199,13 @@ class GlomarOrganizationDetailView(StaffRequiredMixin, DetailView):
         context["plan"] = org._plan
         context["verified_journalist"] = org.verified_journalist
 
+        # Subscriptions
+        subscriptions = org.subscriptions.select_related("plan")
+        # Attach plan_name since templates can't access _plan
+        for s in subscriptions:
+            s.plan_name = s.plan.name if s.plan else "Free"
+        context["subscriptions"] = subscriptions
+
         # Members sorted admins-first, then by username
         memberships = (
             org.memberships.select_related("user")
