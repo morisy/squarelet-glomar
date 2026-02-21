@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {{ event.name }}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_event_detail.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_event_detail">
+  <div class="content">
+    <div class="staff-toolbar">
+      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
+      <div class="header-actions">
+        <a href="{% url 'glomar:event_list' %}" class="btn">All Events</a>
+        <a href="{% url 'glomar:event_update' event.pk %}" class="btn">Edit Event</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <header>
+        <h2>{{ event.name }}</h2>
+      </header>
+      <main>
+        <dl class="crm-fields">
+          <dt>Date</dt>
+          <dd>{{ event.date|date:"N j, Y" }}</dd>
+
+          <dt>Time</dt>
+          <dd>{{ event.time|time:"g:i A"|default:"—" }}</dd>
+
+          <dt>Description</dt>
+          <dd>{{ event.description|default:"—"|linebreaksbr }}</dd>
+
+          <dt>Created</dt>
+          <dd>{{ event.created_at|date:"N j, Y, P" }}</dd>
+        </dl>
+      </main>
+    </section>
+
+    <section id="attendance">
+      <header>
+        <h2>Attendance</h2>
+      </header>
+      <main>
+        <form method="post" action="{% url 'glomar:event_attendance' event.pk %}" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="text" name="username" placeholder="Username" required style="padding: 0.375rem 0.5rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+          <button type="submit" class="btn">Add Attendee</button>
+        </form>
+
+        {% if attendances %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for attendance in attendances %}
+            <tr>
+              <td><a href="{% url 'glomar:user_detail' attendance.user.username %}">{{ attendance.user.username }}</a></td>
+              <td>
+                <form method="post" action="{% url 'glomar:event_attendance' event.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update_status">
+                  <input type="hidden" name="attendance_id" value="{{ attendance.id }}">
+                  <select name="status" onchange="this.form.submit()" style="padding: 0.25rem 0.375rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if attendance.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{% url 'glomar:event_attendance' event.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove">
+                  <input type="hidden" name="attendance_id" value="{{ attendance.id }}">
+                  <button type="submit" class="btn" style="color: var(--red-5, #c0392b); font-size: var(--font-sm, 0.875rem);">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No attendees yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

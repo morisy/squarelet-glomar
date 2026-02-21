@@ -5,14 +5,25 @@ from datetime import date
 
 # Django
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-from django.views.generic import DetailView, TemplateView
+from django.views import View
+from django.views.generic import (
+    CreateView,
+    DetailView,
+    ListView,
+    TemplateView,
+    UpdateView,
+)
 
 # Squarelet
 from squarelet.organizations.models import Organization
 from squarelet.organizations.models.payment import Charge
 from squarelet.users.models import LoginLog, User
+
+from .forms import AttendanceForm, EventForm
+from .models import Event, EventAttendance
 
 
 def _get_billing_context(org_ids):
@@ -128,10 +139,10 @@ def _get_login_chart_context(user=None, user_ids=None):
 
 
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    """Restrict access to staff users"""
+    """Restrict access to users with the view_glomar permission"""
 
     def test_func(self):
-        return self.request.user.is_staff
+        return self.request.user.has_perm("glomar.view_glomar")
 
 
 class GlomarDashboardView(StaffRequiredMixin, TemplateView):
@@ -223,3 +234,92 @@ class GlomarOrganizationDetailView(StaffRequiredMixin, DetailView):
         context.update(_get_login_chart_context(user_ids=member_ids))
 
         return context
+
+
+# --- Event views ---
+
+
+class EventListView(StaffRequiredMixin, ListView):
+    model = Event
+    template_name = "glomar/event_list.html"
+    context_object_name = "events"
+
+    def get_queryset(self):
+        return Event.objects.annotate(
+            registered_count=Count(
+                "attendances",
+                filter=Q(attendances__status=EventAttendance.REGISTERED),
+            ),
+            attended_count=Count(
+                "attendances",
+                filter=Q(attendances__status=EventAttendance.ATTENDED),
+            ),
+            total_count=Count("attendances"),
+        )
+
+
+class EventDetailView(StaffRequiredMixin, DetailView):
+    model = Event
+    template_name = "glomar/event_detail.html"
+    context_object_name = "event"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["attendances"] = (
+            self.object.attendances.select_related("user").order_by("user__username")
+        )
+        context["status_choices"] = EventAttendance.STATUS_CHOICES
+        return context
+
+
+class EventCreateView(StaffRequiredMixin, CreateView):
+    model = Event
+    form_class = EventForm
+    template_name = "glomar/event_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class EventUpdateView(StaffRequiredMixin, UpdateView):
+    model = Event
+    form_class = EventForm
+    template_name = "glomar/event_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class AttendanceUpdateView(StaffRequiredMixin, View):
+    """Handle adding/removing attendees and updating attendance status."""
+
+    def post(self, request, pk):
+        event = get_object_or_404(Event, pk=pk)
+        form = AttendanceForm(request.POST)
+        if form.is_valid():
+            action = form.cleaned_data["action"]
+
+            if action == "add" and form.cleaned_data.get("username"):
+                username = form.cleaned_data["username"]
+                try:
+                    user = User.objects.get(username=username)
+                    EventAttendance.objects.get_or_create(
+                        event=event, user=user
+                    )
+                except User.DoesNotExist:
+                    pass
+
+            elif action == "update_status" and form.cleaned_data.get("attendance_id"):
+                attendance_id = form.cleaned_data["attendance_id"]
+                status = form.cleaned_data.get("status", "")
+                if status in dict(EventAttendance.STATUS_CHOICES):
+                    EventAttendance.objects.filter(
+                        id=attendance_id, event=event
+                    ).update(status=status)
+
+            elif action == "remove" and form.cleaned_data.get("attendance_id"):
+                EventAttendance.objects.filter(
+                    id=form.cleaned_data["attendance_id"], event=event
+                ).delete()
+
+        return redirect("glomar:event_detail", pk=event.pk)
