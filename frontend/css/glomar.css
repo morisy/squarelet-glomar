@@ -93,6 +93,20 @@ article[id^="glomar_"] .content section > main {
   padding: 1rem 1.25rem;
 }
 
+/* Glomar brand icon */
+.glomar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.glomar-brand svg {
+  width: 1.5em;
+  height: 1.5em;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
 /* Staff toolbar */
 article[id^="glomar_"] .staff-toolbar {
   display: flex;

@@ -16,6 +16,7 @@
       <nav>
         <ul>
           <li><a href="#overview" class="nav-item">Overview</a></li>
+          <li><a href="#subscriptions" class="nav-item">Subscriptions</a></li>
           <li><a href="#billing" class="nav-item">Billing</a></li>
           <li><a href="#logins" class="nav-item">Service Logins</a></li>
           <li><a href="#members" class="nav-item">Members</a></li>
@@ -26,7 +27,7 @@
 
   <div class="content">
     <div class="staff-toolbar">
-      <h3>Staff CRM</h3>
+      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
       <div class="header-actions">
         <a href="{% url 'organizations:detail' org.slug %}" class="btn">Org Page</a>
         <a href="{% url 'admin:organizations_organization_change' org.pk %}" class="btn">Django Admin</a>
@@ -72,6 +73,42 @@
           <dt>Verified Journalist</dt>
           <dd>{% if verified_journalist %}<span class="badge green">Yes</span>{% else %}No{% endif %}</dd>
         </dl>
+      </main>
+    </section>
+
+    <section id="subscriptions">
+      <header>
+        <h2>Subscriptions</h2>
+      </header>
+      <main>
+        {% if subscriptions %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th>Renewal Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sub in subscriptions %}
+            <tr>
+              <td>{{ sub.plan_name }}</td>
+              <td>{{ sub.update_on|date:"N j, Y"|default:"—" }}</td>
+              <td>
+                {% if sub.cancelled %}
+                  <span class="badge">Cancelled</span>
+                {% else %}
+                  <span class="badge green">Active</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No active subscriptions.</p>
+        {% endif %}
       </main>
     </section>
 
