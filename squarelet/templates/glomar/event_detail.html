@@ -31,6 +31,9 @@
           <dt>Time</dt>
           <dd>{{ event.time|time:"g:i A"|default:"—" }}</dd>
 
+          <dt>Format</dt>
+          <dd>{{ event.get_format_display|default:"—" }}</dd>
+
           <dt>Description</dt>
           <dd>{{ event.description|default:"—"|linebreaksbr }}</dd>
 

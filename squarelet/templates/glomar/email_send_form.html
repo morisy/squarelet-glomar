@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {% if email_send %}Edit {{ email_send.title }}{% else %}New Email Send{% endif %}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_email_send_form.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_email_send_form">
+  <div class="content">
+    <div class="staff-toolbar">
+      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
+      <div class="header-actions">
+        <a href="{% url 'glomar:email_send_list' %}" class="btn">All Email Sends</a>
+      </div>
+    </div>
+
+    <section>
+      <header>
+        <h2>{% if object %}Edit Email Send{% else %}New Email Send{% endif %}</h2>
+      </header>
+      <main>
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div style="margin-bottom: 1rem;">
+            <label for="{{ field.id_for_label }}" style="display: block; font-weight: 600; font-size: var(--font-sm, 0.875rem); color: var(--gray-4, #5c717c); margin-bottom: 0.25rem;">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <ul style="color: var(--red-5, #c0392b); font-size: var(--font-sm, 0.875rem); margin: 0.25rem 0 0; padding-left: 1.25rem;">
+              {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn">{% if object %}Save Changes{% else %}Create Email Send{% endif %}</button>
+        </form>
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

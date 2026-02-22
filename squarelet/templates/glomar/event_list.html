@@ -30,6 +30,7 @@
             <tr>
               <th>Name</th>
               <th>Date</th>
+              <th>Format</th>
               <th>Registered</th>
               <th>Attended</th>
               <th>Total</th>
@@ -40,6 +41,7 @@
             <tr>
               <td><a href="{% url 'glomar:event_detail' event.pk %}">{{ event.name }}</a></td>
               <td>{{ event.date|date:"N j, Y" }}{% if event.time %} {{ event.time|time:"g:i A" }}{% endif %}</td>
+              <td>{{ event.get_format_display|default:"—" }}</td>
               <td>{{ event.registered_count }}</td>
               <td>{{ event.attended_count }}</td>
               <td>{{ event.total_count }}</td>

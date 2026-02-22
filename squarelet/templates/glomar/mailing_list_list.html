@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: Mailing Lists{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_mailing_list_list.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_mailing_list_list">
+  <div class="content">
+    <div class="staff-toolbar">
+      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
+      <div class="header-actions">
+        <a href="{% url 'glomar:dashboard' %}" class="btn">Dashboard</a>
+      </div>
+    </div>
+
+    <section>
+      <header>
+        <h2>Mailing Lists</h2>
+        <a href="{% url 'glomar:mailing_list_create' %}" class="btn">New Mailing List</a>
+      </header>
+      <main>
+        {% if mailing_lists %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Sends</th>
+              <th>Total Recipients</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ml in mailing_lists %}
+            <tr>
+              <td><a href="{% url 'glomar:mailing_list_detail' ml.pk %}">{{ ml.name }}</a></td>
+              <td>{{ ml.send_count }}</td>
+              <td>{{ ml.total_recipients }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No mailing lists yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

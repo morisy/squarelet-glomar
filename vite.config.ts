@@ -1,4 +1,4 @@
-import { globSync } from "fs";
+import { globSync, readFileSync } from "fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,6 +43,10 @@ export default defineConfig({
     port: 4200, // must be a port other than 5173
     host: true,
     cors: true,
+    https: {
+      cert: readFileSync("config/certs/dev.squarelet.com.pem"),
+      key: readFileSync("config/certs/dev.squarelet.com-key.pem"),
+    },
     watch: {
       usePolling: true,
     },

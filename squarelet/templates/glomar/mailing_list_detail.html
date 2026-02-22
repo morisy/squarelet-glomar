@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {{ mailing_list.name }}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_mailing_list_detail.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_mailing_list_detail">
+  <div class="content">
+    <div class="staff-toolbar">
+      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
+      <div class="header-actions">
+        <a href="{% url 'glomar:mailing_list_list' %}" class="btn">All Mailing Lists</a>
+        <a href="{% url 'glomar:mailing_list_update' mailing_list.pk %}" class="btn">Edit</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <header>
+        <h2>{{ mailing_list.name }}</h2>
+      </header>
+      <main>
+        <dl class="crm-fields">
+          <dt>Description</dt>
+          <dd>{{ mailing_list.description|default:"—"|linebreaksbr }}</dd>
+
+          <dt>Created</dt>
+          <dd>{{ mailing_list.created_at|date:"N j, Y, P" }}</dd>
+        </dl>
+      </main>
+    </section>
+
+    <section id="sends">
+      <header>
+        <h2>Email Sends</h2>
+      </header>
+      <main>
+        {% if email_sends %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Date</th>
+              <th>Recipients</th>
+              <th>Opens</th>
+              <th>Clicks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for send in email_sends %}
+            <tr>
+              <td><a href="{% url 'glomar:email_send_detail' send.pk %}">{{ send.title }}</a></td>
+              <td>{{ send.date|date:"N j, Y" }}{% if send.time %} {{ send.time|time:"g:i A" }}{% endif %}</td>
+              <td>{{ send.recipient_count }}</td>
+              <td>{{ send.total_opens|default:"0" }}</td>
+              <td>{{ send.total_clicks|default:"0" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No email sends yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

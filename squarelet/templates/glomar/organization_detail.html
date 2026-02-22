@@ -20,6 +20,8 @@
           <li><a href="#billing" class="nav-item">Billing</a></li>
           <li><a href="#logins" class="nav-item">Service Logins</a></li>
           <li><a href="#members" class="nav-item">Members</a></li>
+          <li><a href="#events" class="nav-item">Events</a></li>
+          <li><a href="#emails" class="nav-item">Emails</a></li>
         </ul>
       </nav>
     </div>
@@ -181,6 +183,78 @@
         </table>
         {% else %}
         <p class="empty">No members.</p>
+        {% endif %}
+      </main>
+    </section>
+    <section id="events">
+      <header>
+        <h2>Events</h2>
+      </header>
+      <main>
+        {% if event_attendances %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Event</th>
+              <th>Date</th>
+              <th>Format</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for attendance in event_attendances %}
+            <tr>
+              <td><a href="{% url 'glomar:user_detail' attendance.user.username %}">{{ attendance.user.username }}</a></td>
+              <td><a href="{% url 'glomar:event_detail' attendance.event.pk %}">{{ attendance.event.name }}</a></td>
+              <td>{{ attendance.event.date|date:"N j, Y" }}</td>
+              <td>{{ attendance.event.get_format_display|default:"—" }}</td>
+              <td>{{ attendance.get_status_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No event attendance records.</p>
+        {% endif %}
+      </main>
+    </section>
+    <section id="emails">
+      <header>
+        <h2>Emails</h2>
+      </header>
+      <main>
+        {% if email_receipts %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email Send</th>
+              <th>Mailing List</th>
+              <th>Date</th>
+              <th>Opens</th>
+              <th>Clicks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for receipt in email_receipts %}
+            <tr>
+              <td><a href="{% url 'glomar:user_detail' receipt.user.username %}">{{ receipt.user.username }}</a></td>
+              <td><a href="{% url 'glomar:email_send_detail' receipt.email_send.pk %}">{{ receipt.email_send.title }}</a></td>
+              <td>
+                {% if receipt.email_send.mailing_list %}
+                <a href="{% url 'glomar:mailing_list_detail' receipt.email_send.mailing_list.pk %}">{{ receipt.email_send.mailing_list.name }}</a>
+                {% else %}—{% endif %}
+              </td>
+              <td>{{ receipt.email_send.date|date:"N j, Y" }}</td>
+              <td>{{ receipt.opens }}</td>
+              <td>{{ receipt.clicks }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No email receipts.</p>
         {% endif %}
       </main>
     </section>

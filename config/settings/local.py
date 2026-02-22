@@ -63,7 +63,9 @@ CSRF_COOKIE_HTTPONLY = False
 DJANGO_VITE = {
     "default": {
         "dev_mode": DEBUG,
+        "dev_server_host": "dev.squarelet.com",
         "dev_server_port": 4200,
+        "dev_server_protocol": "https",
         "manifest_path": str(ROOT_DIR.path("frontend/dist/manifest.json")),
     }
 }

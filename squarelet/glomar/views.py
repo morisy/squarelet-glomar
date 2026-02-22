@@ -22,8 +22,14 @@ from squarelet.organizations.models import Organization
 from squarelet.organizations.models.payment import Charge
 from squarelet.users.models import LoginLog, User
 
-from .forms import AttendanceForm, EventForm
-from .models import Event, EventAttendance
+from .forms import (
+    AttendanceForm,
+    EmailSendForm,
+    EventForm,
+    MailingListForm,
+    ReceiptForm,
+)
+from .models import EmailReceipt, EmailSend, Event, EventAttendance, MailingList
 
 
 def _get_billing_context(org_ids):
@@ -42,20 +48,15 @@ def _get_billing_context(org_ids):
         while m <= 0:
             m += 12
             y -= 1
-        month_start = timezone.make_aware(
-            timezone.datetime(y, m, 1)
-        )
+        month_start = timezone.make_aware(timezone.datetime(y, m, 1))
         if m == 12:
-            month_end = timezone.make_aware(
-                timezone.datetime(y + 1, 1, 1)
-            )
+            month_end = timezone.make_aware(timezone.datetime(y + 1, 1, 1))
         else:
-            month_end = timezone.make_aware(
-                timezone.datetime(y, m + 1, 1)
-            )
+            month_end = timezone.make_aware(timezone.datetime(y, m + 1, 1))
         total = (
-            charges.filter(created_at__gte=month_start, created_at__lt=month_end)
-            .aggregate(total=Sum("amount"))["total"]
+            charges.filter(
+                created_at__gte=month_start, created_at__lt=month_end
+            ).aggregate(total=Sum("amount"))["total"]
             or 0
         )
         months.append(
@@ -132,9 +133,7 @@ def _get_login_chart_context(user=None, user_ids=None):
             series[s].append(lookup[(y, m, s)])
 
     return {
-        "login_chart_json": json.dumps(
-            {"labels": labels, "series": series}
-        ),
+        "login_chart_json": json.dumps({"labels": labels, "series": series}),
     }
 
 
@@ -190,6 +189,20 @@ class GlomarUserDetailView(StaffRequiredMixin, DetailView):
         # Service logins chart
         context.update(_get_login_chart_context(user))
 
+        # Event attendances
+        context["event_attendances"] = (
+            EventAttendance.objects.filter(user=user)
+            .select_related("event")
+            .order_by("-event__date")
+        )
+
+        # Email receipts
+        context["email_receipts"] = (
+            EmailReceipt.objects.filter(user=user)
+            .select_related("email_send", "email_send__mailing_list")
+            .order_by("-email_send__date")
+        )
+
         return context
 
 
@@ -218,9 +231,8 @@ class GlomarOrganizationDetailView(StaffRequiredMixin, DetailView):
         context["subscriptions"] = subscriptions
 
         # Members sorted admins-first, then by username
-        memberships = (
-            org.memberships.select_related("user")
-            .order_by("-admin", "user__username")
+        memberships = org.memberships.select_related("user").order_by(
+            "-admin", "user__username"
         )
         context["memberships"] = memberships
 
@@ -228,10 +240,22 @@ class GlomarOrganizationDetailView(StaffRequiredMixin, DetailView):
         context.update(_get_billing_context([org.id]))
 
         # Service logins chart (all members' logins)
-        member_ids = list(
-            org.memberships.values_list("user_id", flat=True)
-        )
+        member_ids = list(org.memberships.values_list("user_id", flat=True))
         context.update(_get_login_chart_context(user_ids=member_ids))
+
+        # Event attendances for all org members
+        context["event_attendances"] = (
+            EventAttendance.objects.filter(user_id__in=member_ids)
+            .select_related("event", "user")
+            .order_by("-event__date")
+        )
+
+        # Email receipts for all org members
+        context["email_receipts"] = (
+            EmailReceipt.objects.filter(user_id__in=member_ids)
+            .select_related("email_send", "email_send__mailing_list", "user")
+            .order_by("-email_send__date")
+        )
 
         return context
 
@@ -265,9 +289,9 @@ class EventDetailView(StaffRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["attendances"] = (
-            self.object.attendances.select_related("user").order_by("user__username")
-        )
+        context["attendances"] = self.object.attendances.select_related(
+            "user"
+        ).order_by("user__username")
         context["status_choices"] = EventAttendance.STATUS_CHOICES
         return context
 
@@ -303,9 +327,7 @@ class AttendanceUpdateView(StaffRequiredMixin, View):
                 username = form.cleaned_data["username"]
                 try:
                     user = User.objects.get(username=username)
-                    EventAttendance.objects.get_or_create(
-                        event=event, user=user
-                    )
+                    EventAttendance.objects.get_or_create(event=event, user=user)
                 except User.DoesNotExist:
                     pass
 
@@ -323,3 +345,135 @@ class AttendanceUpdateView(StaffRequiredMixin, View):
                 ).delete()
 
         return redirect("glomar:event_detail", pk=event.pk)
+
+
+# --- Mailing List views ---
+
+
+class MailingListListView(StaffRequiredMixin, ListView):
+    model = MailingList
+    template_name = "glomar/mailing_list_list.html"
+    context_object_name = "mailing_lists"
+
+    def get_queryset(self):
+        return MailingList.objects.annotate(
+            send_count=Count("email_sends"),
+            total_recipients=Count("email_sends__receipts"),
+        )
+
+
+class MailingListDetailView(StaffRequiredMixin, DetailView):
+    model = MailingList
+    template_name = "glomar/mailing_list_detail.html"
+    context_object_name = "mailing_list"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["email_sends"] = self.object.email_sends.annotate(
+            recipient_count=Count("receipts"),
+            total_opens=Sum("receipts__opens"),
+            total_clicks=Sum("receipts__clicks"),
+        )
+        return context
+
+
+class MailingListCreateView(StaffRequiredMixin, CreateView):
+    model = MailingList
+    form_class = MailingListForm
+    template_name = "glomar/mailing_list_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class MailingListUpdateView(StaffRequiredMixin, UpdateView):
+    model = MailingList
+    form_class = MailingListForm
+    template_name = "glomar/mailing_list_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+# --- Email Send views ---
+
+
+class EmailSendListView(StaffRequiredMixin, ListView):
+    model = EmailSend
+    template_name = "glomar/email_send_list.html"
+    context_object_name = "email_sends"
+
+    def get_queryset(self):
+        return EmailSend.objects.select_related("mailing_list").annotate(
+            recipient_count=Count("receipts"),
+            total_opens=Sum("receipts__opens"),
+            total_clicks=Sum("receipts__clicks"),
+        )
+
+
+class EmailSendDetailView(StaffRequiredMixin, DetailView):
+    model = EmailSend
+    template_name = "glomar/email_send_detail.html"
+    context_object_name = "email_send"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["receipts"] = self.object.receipts.select_related("user").order_by(
+            "user__username"
+        )
+        return context
+
+
+class EmailSendCreateView(StaffRequiredMixin, CreateView):
+    model = EmailSend
+    form_class = EmailSendForm
+    template_name = "glomar/email_send_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class EmailSendUpdateView(StaffRequiredMixin, UpdateView):
+    model = EmailSend
+    form_class = EmailSendForm
+    template_name = "glomar/email_send_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class ReceiptUpdateView(StaffRequiredMixin, View):
+    """Handle adding/removing recipients and updating opens/clicks."""
+
+    def post(self, request, pk):
+        email_send = get_object_or_404(EmailSend, pk=pk)
+        form = ReceiptForm(request.POST)
+        if form.is_valid():
+            action = form.cleaned_data["action"]
+
+            if action == "add" and form.cleaned_data.get("username"):
+                username = form.cleaned_data["username"]
+                try:
+                    user = User.objects.get(username=username)
+                    EmailReceipt.objects.get_or_create(email_send=email_send, user=user)
+                except User.DoesNotExist:
+                    pass
+
+            elif action == "update" and form.cleaned_data.get("receipt_id"):
+                receipt_id = form.cleaned_data["receipt_id"]
+                updates = {}
+                if form.cleaned_data.get("opens") is not None:
+                    updates["opens"] = form.cleaned_data["opens"]
+                if form.cleaned_data.get("clicks") is not None:
+                    updates["clicks"] = form.cleaned_data["clicks"]
+                if updates:
+                    EmailReceipt.objects.filter(
+                        id=receipt_id, email_send=email_send
+                    ).update(**updates)
+
+            elif action == "remove" and form.cleaned_data.get("receipt_id"):
+                EmailReceipt.objects.filter(
+                    id=form.cleaned_data["receipt_id"], email_send=email_send
+                ).delete()
+
+        return redirect("glomar:email_send_detail", pk=email_send.pk)

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {{ email_send.title }}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_email_send_detail.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_email_send_detail">
+  <div class="content">
+    <div class="staff-toolbar">
+      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
+      <div class="header-actions">
+        <a href="{% url 'glomar:email_send_list' %}" class="btn">All Email Sends</a>
+        <a href="{% url 'glomar:email_send_update' email_send.pk %}" class="btn">Edit</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <header>
+        <h2>{{ email_send.title }}</h2>
+      </header>
+      <main>
+        <dl class="crm-fields">
+          <dt>Mailing List</dt>
+          <dd>
+            {% if email_send.mailing_list %}
+            <a href="{% url 'glomar:mailing_list_detail' email_send.mailing_list.pk %}">{{ email_send.mailing_list.name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+
+          <dt>Date</dt>
+          <dd>{{ email_send.date|date:"N j, Y" }}</dd>
+
+          <dt>Time</dt>
+          <dd>{{ email_send.time|time:"g:i A"|default:"—" }}</dd>
+
+          <dt>Created</dt>
+          <dd>{{ email_send.created_at|date:"N j, Y, P" }}</dd>
+        </dl>
+      </main>
+    </section>
+
+    <section id="recipients">
+      <header>
+        <h2>Recipients</h2>
+      </header>
+      <main>
+        <form method="post" action="{% url 'glomar:email_receipt' email_send.pk %}" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="text" name="username" placeholder="Username" required style="padding: 0.375rem 0.5rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+          <button type="submit" class="btn">Add Recipient</button>
+        </form>
+
+        {% if receipts %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Opens</th>
+              <th>Clicks</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for receipt in receipts %}
+            <tr>
+              <td><a href="{% url 'glomar:user_detail' receipt.user.username %}">{{ receipt.user.username }}</a></td>
+              <td>
+                <form method="post" action="{% url 'glomar:email_receipt' email_send.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="receipt_id" value="{{ receipt.id }}">
+                  <input type="hidden" name="clicks" value="{{ receipt.clicks }}">
+                  <input type="number" name="opens" value="{{ receipt.opens }}" min="0" onchange="this.form.submit()" style="width: 4rem; padding: 0.25rem 0.375rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{% url 'glomar:email_receipt' email_send.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <input type="hidden" name="receipt_id" value="{{ receipt.id }}">
+                  <input type="hidden" name="opens" value="{{ receipt.opens }}">
+                  <input type="number" name="clicks" value="{{ receipt.clicks }}" min="0" onchange="this.form.submit()" style="width: 4rem; padding: 0.25rem 0.375rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+                </form>
+              </td>
+              <td>
+                <form method="post" action="{% url 'glomar:email_receipt' email_send.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove">
+                  <input type="hidden" name="receipt_id" value="{{ receipt.id }}">
+                  <button type="submit" class="btn" style="color: var(--red-5, #c0392b); font-size: var(--font-sm, 0.875rem);">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No recipients yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

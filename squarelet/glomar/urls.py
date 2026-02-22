@@ -30,4 +30,51 @@ urlpatterns = [
         views.AttendanceUpdateView.as_view(),
         name="event_attendance",
     ),
+    # Mailing Lists
+    path(
+        "mailing-lists/",
+        views.MailingListListView.as_view(),
+        name="mailing_list_list",
+    ),
+    path(
+        "mailing-lists/create/",
+        views.MailingListCreateView.as_view(),
+        name="mailing_list_create",
+    ),
+    path(
+        "mailing-lists/<int:pk>/",
+        views.MailingListDetailView.as_view(),
+        name="mailing_list_detail",
+    ),
+    path(
+        "mailing-lists/<int:pk>/edit/",
+        views.MailingListUpdateView.as_view(),
+        name="mailing_list_update",
+    ),
+    # Email Sends
+    path(
+        "email-sends/",
+        views.EmailSendListView.as_view(),
+        name="email_send_list",
+    ),
+    path(
+        "email-sends/create/",
+        views.EmailSendCreateView.as_view(),
+        name="email_send_create",
+    ),
+    path(
+        "email-sends/<int:pk>/",
+        views.EmailSendDetailView.as_view(),
+        name="email_send_detail",
+    ),
+    path(
+        "email-sends/<int:pk>/edit/",
+        views.EmailSendUpdateView.as_view(),
+        name="email_send_update",
+    ),
+    path(
+        "email-sends/<int:pk>/receipt/",
+        views.ReceiptUpdateView.as_view(),
+        name="email_receipt",
+    ),
 ]
