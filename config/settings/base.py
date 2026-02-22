@@ -94,6 +94,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "django_filters",
     "django_vite",
+    "mcp_server",
     "robots",
     "rest_framework_simplejwt.token_blacklist",
 ]

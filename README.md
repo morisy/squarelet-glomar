@@ -252,6 +252,69 @@ Both linting and formatting are checked on CodeShip. Please ensure your code is 
 `inv npm` will allow you to run NPM commands. `inv npm "run build"` should be run to rebuild assets if any javascript or CSS is changed. If you will be editing a lot of javascript or CSS, you can run `inv npm "run dev"`.
 `inv heroku` will open a python shell on Heroku.
 
+## MCP Server (AI Integration)
+
+Squarelet includes an [MCP (Model Context Protocol)][mcp-spec] server powered by [django-mcp-server][django-mcp-server], allowing AI assistants like Claude Desktop to query Glomar CRM data directly via the Django ORM.
+
+### Available data collections
+
+The MCP server exposes the following queryable collections:
+
+| Collection | Model | Notes |
+|---|---|---|
+| User | `users.User` | Safe fields only (no password hashes or tokens) |
+| Organization | `organizations.Organization` | Filters out individual/personal orgs |
+| Event | `glomar.Event` | All fields |
+| EventAttendance | `glomar.EventAttendance` | All fields |
+| MailingList | `glomar.MailingList` | All fields |
+| EmailSend | `glomar.EmailSend` | All fields |
+| EmailReceipt | `glomar.EmailReceipt` | All fields |
+| ResearchContract | `glomar.ResearchContract` | All fields |
+| ResearchProject | `glomar.ResearchProject` | All fields |
+| WorkLog | `glomar.WorkLog` | All fields |
+
+### Transports
+
+- **stdio** (for Claude Desktop): `./manage.py stdio_server`
+- **Streamable HTTP** (for web clients): `GET/POST /mcp` (unauthenticated in local dev)
+
+### Claude Desktop setup
+
+1. Make sure the Docker containers are running (`inv up`)
+2. Add the following to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "glomar-crm": {
+      "command": "docker",
+      "args": [
+        "compose", "-f",
+        "/absolute/path/to/squarelet-glomar/local.yml",
+        "-p", "squarelet-glomar_tc0mj",
+        "run", "--rm",
+        "squarelet_django",
+        "./manage.py", "stdio_server"
+      ]
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop (Cmd+Q, then reopen)
+4. Look for the tools icon in the chat input — you should see "glomar-crm" with a `query_data_collections` tool
+
+### Example prompts
+
+- "What users are in the system?"
+- "Show me all organizations"
+- "List upcoming events"
+- "How many hours have been logged on research projects?"
+
+### Toolset definitions
+
+The MCP toolsets are defined in `squarelet/glomar/mcp.py` using `ModelQueryToolset` subclasses. To expose a new model, add a new subclass there — it will be auto-discovered on restart.
+
 ## Pip Tools
 
 Python dependencies are managed via [pip-tools][pip-tools]. This allows us to keep all of the python dependencies (including underling dependencies) pinned, to allow for consistent execution across development and production environments.
@@ -306,6 +369,8 @@ Icons are sometimes duplicated, because we need to use them in both Django templ
 [pip-tools]: https://github.com/jazzband/pip-tools
 [mkcert-install]: https://github.com/FiloSottile/mkcert#installation
 [playwright]: https://playwright.dev/
+[mcp-spec]: https://modelcontextprotocol.io/
+[django-mcp-server]: https://github.com/omarbenhamid/django-mcp-server
 [muckrock]: https://github.com/MuckRock/muckrock
 [documentcloud]: https://github.com/MuckRock/documentcloud
 [documentcloudfrontend]: https://github.com/MuckRock/documentcloud-frontend

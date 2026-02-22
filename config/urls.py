@@ -147,6 +147,8 @@ urlpatterns = [
         r"^election-hub/(?P<path>.*)?$",
         redirect_erh,
     ),
+    # MCP server endpoint (streamable HTTP transport at /mcp)
+    path("", include("mcp_server.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

@@ -15,6 +15,7 @@ django-debug-toolbar
 django-email-bandit
 django-environ
 django-extensions
+django-mcp-server
 django-filter
 django-hijack<3
 django-model-utils
