@@ -19,6 +19,18 @@ from squarelet.organizations.fe_api.viewsets import (
     InvitationViewSet as FEInvitationViewSet,
     OrganizationViewSet as FEOrganizationViewSet,
 )
+from squarelet.glomar.api.viewsets import (
+    EmailReceiptViewSet as GlomarEmailReceiptViewSet,
+    EmailSendViewSet as GlomarEmailSendViewSet,
+    EventAttendanceViewSet as GlomarEventAttendanceViewSet,
+    EventViewSet as GlomarEventViewSet,
+    GlomarOrganizationDetailViewSet,
+    GlomarUserDetailViewSet,
+    MailingListViewSet as GlomarMailingListViewSet,
+    ResearchContractViewSet as GlomarResearchContractViewSet,
+    ResearchProjectViewSet as GlomarResearchProjectViewSet,
+    WorkLogViewSet as GlomarWorkLogViewSet,
+)
 from squarelet.organizations.viewsets import ChargeViewSet, OrganizationViewSet
 from squarelet.payments.views import PlanDetailView, PlanRedirectView
 from squarelet.users.fe_api.viewsets import UserViewSet as FEUserViewSet
@@ -52,6 +64,38 @@ fe_api_router.register(
 )
 fe_api_router.register(r"invitations", FEInvitationViewSet, basename="fe-invitations")
 fe_api_router.register(r"users", FEUserViewSet, basename="fe-users")
+
+glomar_api_router = routers.DefaultRouter()
+glomar_api_router.register(r"events", GlomarEventViewSet, basename="glomar-events")
+glomar_api_router.register(
+    r"event-attendances",
+    GlomarEventAttendanceViewSet,
+    basename="glomar-event-attendances",
+)
+glomar_api_router.register(
+    r"mailing-lists", GlomarMailingListViewSet, basename="glomar-mailing-lists"
+)
+glomar_api_router.register(
+    r"email-sends", GlomarEmailSendViewSet, basename="glomar-email-sends"
+)
+glomar_api_router.register(
+    r"email-receipts", GlomarEmailReceiptViewSet, basename="glomar-email-receipts"
+)
+glomar_api_router.register(
+    r"contracts", GlomarResearchContractViewSet, basename="glomar-contracts"
+)
+glomar_api_router.register(
+    r"projects", GlomarResearchProjectViewSet, basename="glomar-projects"
+)
+glomar_api_router.register(
+    r"work-logs", GlomarWorkLogViewSet, basename="glomar-work-logs"
+)
+glomar_api_router.register(
+    r"users", GlomarUserDetailViewSet, basename="glomar-users"
+)
+glomar_api_router.register(
+    r"organizations", GlomarOrganizationDetailViewSet, basename="glomar-organizations"
+)
 
 
 def redirect_erh(request, path=""):
@@ -89,6 +133,10 @@ urlpatterns = [
     path("accounts/", include("allauth.socialaccount.urls")),
     path("api/", include(router.urls)),
     path("fe_api/", include((fe_api_router.urls, "fe_api"), namespace="fe_api")),
+    path(
+        "api/glomar/",
+        include((glomar_api_router.urls, "glomar_api"), namespace="glomar_api"),
+    ),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("openid/", include("oidc_provider.urls", namespace="oidc_provider")),
