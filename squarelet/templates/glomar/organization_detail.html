@@ -22,6 +22,7 @@
           <li><a href="#members" class="nav-item">Members</a></li>
           <li><a href="#events" class="nav-item">Events</a></li>
           <li><a href="#emails" class="nav-item">Emails</a></li>
+          <li><a href="#research" class="nav-item">Research Hours</a></li>
         </ul>
       </nav>
     </div>
@@ -254,6 +255,64 @@
         </table>
         {% else %}
         <p class="empty">No email receipts.</p>
+        {% endif %}
+      </main>
+    </section>
+    <section id="research">
+      <header>
+        <h2>Research Hours</h2>
+      </header>
+      <main>
+        {% if research_total_hours %}
+        <dl class="crm-fields">
+          <dt>Hours Used</dt>
+          <dd>{{ research_hours_used }} / {{ research_total_hours }}</dd>
+
+          <dt>Hours Remaining</dt>
+          <dd>
+            {{ research_hours_remaining }}
+            {% if research_hours_remaining < 0 %}<span class="badge over-budget">Over budget</span>{% endif %}
+          </dd>
+        </dl>
+        <div style="margin-top: 0.75rem;">
+          <div class="crm-progress">
+            <div class="crm-progress-fill{% if research_usage_pct > 100 %} over{% elif research_usage_pct > 80 %} warning{% endif %}" style="width: {% if research_usage_pct > 100 %}100{% else %}{{ research_usage_pct }}{% endif %}%"></div>
+          </div>
+          <p style="font-size: var(--font-sm, 0.875rem); color: var(--gray-4, #5c717c); margin-top: 0.25rem;">{{ research_usage_pct }}% used (active contracts)</p>
+        </div>
+        {% endif %}
+
+        {% if research_contracts %}
+        <table class="crm-table" style="margin-top: 1rem;">
+          <thead>
+            <tr>
+              <th>Contract</th>
+              <th>Status</th>
+              <th>Hours</th>
+              <th>Dates</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contract in research_contracts %}
+            <tr>
+              <td><a href="{% url 'glomar:contract_detail' contract.pk %}">{{ contract.title }}</a></td>
+              <td>
+                {% if contract.status == "active" %}
+                  <span class="badge green">Active</span>
+                {% elif contract.status == "completed" %}
+                  <span class="badge">Completed</span>
+                {% else %}
+                  <span class="badge">Expired</span>
+                {% endif %}
+              </td>
+              <td>{{ contract.hours_used|default_if_none:0 }} / {{ contract.total_hours }}</td>
+              <td>{{ contract.start_date|date:"N j, Y" }} — {{ contract.end_date|date:"N j, Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No research contracts.</p>
         {% endif %}
       </main>
     </section>

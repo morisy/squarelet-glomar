@@ -324,6 +324,51 @@ article[id^="glomar_"] .glomar-header-actions {
   flex-shrink: 0;
 }
 
+/* Progress bar */
+.crm-progress {
+  width: 100%;
+  height: 0.5rem;
+  background: var(--gray-1, #eef1f3);
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.crm-progress-fill {
+  height: 100%;
+  background: var(--blue-3, #4a90d9);
+  border-radius: 0.25rem;
+  transition: width 0.3s ease;
+}
+
+.crm-progress-fill.warning {
+  background: var(--orange-3, #f5a623);
+}
+
+.crm-progress-fill.over {
+  background: var(--red-5, #c0392b);
+}
+
+.crm-progress-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crm-progress-mini .crm-progress {
+  flex: 1;
+  min-width: 4rem;
+}
+
+.crm-progress-mini span {
+  font-size: var(--font-xs, 0.75rem);
+  white-space: nowrap;
+}
+
+.badge.over-budget {
+  background: var(--red-5, #c0392b);
+  color: #fff;
+}
+
 /* Empty / muted text */
 .empty {
   color: var(--gray-3, #93a1aa);

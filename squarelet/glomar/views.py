@@ -28,8 +28,20 @@ from .forms import (
     EventForm,
     MailingListForm,
     ReceiptForm,
+    ResearchContractForm,
+    ResearchProjectForm,
+    WorkLogForm,
 )
-from .models import EmailReceipt, EmailSend, Event, EventAttendance, MailingList
+from .models import (
+    EmailReceipt,
+    EmailSend,
+    Event,
+    EventAttendance,
+    MailingList,
+    ResearchContract,
+    ResearchProject,
+    WorkLog,
+)
 
 
 def _get_billing_context(org_ids):
@@ -257,6 +269,22 @@ class GlomarOrganizationDetailView(StaffRequiredMixin, DetailView):
             .order_by("-email_send__date")
         )
 
+        # Research contracts
+        contracts = org.research_contracts.annotate(
+            hours_used=Sum("projects__work_logs__hours")
+        )
+        context["research_contracts"] = contracts
+
+        active_contracts = contracts.filter(status=ResearchContract.ACTIVE)
+        total_hours = active_contracts.aggregate(total=Sum("total_hours"))["total"] or 0
+        hours_used = active_contracts.aggregate(used=Sum("hours_used"))["used"] or 0
+        context["research_total_hours"] = total_hours
+        context["research_hours_used"] = hours_used
+        context["research_hours_remaining"] = total_hours - hours_used
+        context["research_usage_pct"] = (
+            round(hours_used / total_hours * 100) if total_hours else 0
+        )
+
         return context
 
 
@@ -477,3 +505,157 @@ class ReceiptUpdateView(StaffRequiredMixin, View):
                 ).delete()
 
         return redirect("glomar:email_send_detail", pk=email_send.pk)
+
+
+# --- Research Contract views ---
+
+
+class ContractListView(StaffRequiredMixin, ListView):
+    model = ResearchContract
+    template_name = "glomar/contract_list.html"
+    context_object_name = "contracts"
+
+    def get_queryset(self):
+        return ResearchContract.objects.select_related("organization").annotate(
+            hours_used=Sum("projects__work_logs__hours"),
+            project_count=Count("projects"),
+        )
+
+
+class ContractDetailView(StaffRequiredMixin, DetailView):
+    model = ResearchContract
+    template_name = "glomar/contract_detail.html"
+    context_object_name = "contract"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        contract = self.object
+        projects = contract.projects.annotate(hours_used=Sum("work_logs__hours"))
+        context["projects"] = projects
+
+        total = contract.total_hours
+        used = sum((p.hours_used or 0) for p in projects)
+        context["hours_used"] = used
+        context["hours_remaining"] = total - used
+        context["usage_pct"] = round(used / total * 100) if total else 0
+        return context
+
+
+class ContractCreateView(StaffRequiredMixin, CreateView):
+    model = ResearchContract
+    form_class = ResearchContractForm
+    template_name = "glomar/contract_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class ContractUpdateView(StaffRequiredMixin, UpdateView):
+    model = ResearchContract
+    form_class = ResearchContractForm
+    template_name = "glomar/contract_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+# --- Research Project views ---
+
+
+class ProjectListView(StaffRequiredMixin, ListView):
+    model = ResearchProject
+    template_name = "glomar/project_list.html"
+    context_object_name = "projects"
+
+    def get_queryset(self):
+        return ResearchProject.objects.select_related(
+            "contract", "contract__organization"
+        ).annotate(hours_used=Sum("work_logs__hours"))
+
+
+class ProjectDetailView(StaffRequiredMixin, DetailView):
+    model = ResearchProject
+    template_name = "glomar/project_detail.html"
+    context_object_name = "project"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = self.object
+        context["work_logs"] = project.work_logs.select_related("user")
+
+        hours_used = project.work_logs.aggregate(total=Sum("hours"))["total"] or 0
+        allotted = project.allotted_hours
+        context["hours_used"] = hours_used
+        context["hours_remaining"] = allotted - hours_used
+        context["is_over"] = hours_used > allotted
+        context["usage_pct"] = (
+            min(round(hours_used / allotted * 100), 100) if allotted else 0
+        )
+        context["overage_pct"] = (
+            round((hours_used - allotted) / allotted * 100)
+            if allotted and hours_used > allotted
+            else 0
+        )
+        return context
+
+
+class ProjectCreateView(StaffRequiredMixin, CreateView):
+    model = ResearchProject
+    form_class = ResearchProjectForm
+    template_name = "glomar/project_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["contract"] = get_object_or_404(
+            ResearchContract, pk=self.kwargs["contract_pk"]
+        )
+        return context
+
+    def form_valid(self, form):
+        form.instance.contract = get_object_or_404(
+            ResearchContract, pk=self.kwargs["contract_pk"]
+        )
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class ProjectUpdateView(StaffRequiredMixin, UpdateView):
+    model = ResearchProject
+    form_class = ResearchProjectForm
+    template_name = "glomar/project_form.html"
+
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
+
+class WorkLogActionView(StaffRequiredMixin, View):
+    """Handle adding/removing work log entries."""
+
+    def post(self, request, pk):
+        project = get_object_or_404(ResearchProject, pk=pk)
+        form = WorkLogForm(request.POST)
+        if form.is_valid():
+            action = form.cleaned_data["action"]
+
+            if action == "add" and form.cleaned_data.get("username"):
+                username = form.cleaned_data["username"]
+                try:
+                    user = User.objects.get(username=username)
+                    WorkLog.objects.create(
+                        project=project,
+                        user=user,
+                        hours=form.cleaned_data["hours"],
+                        description=form.cleaned_data["description"],
+                        work_date=form.cleaned_data["work_date"],
+                    )
+                except User.DoesNotExist:
+                    pass
+
+            elif action == "remove" and form.cleaned_data.get("work_log_id"):
+                WorkLog.objects.filter(
+                    id=form.cleaned_data["work_log_id"], project=project
+                ).delete()
+
+        return redirect("glomar:project_detail", pk=project.pk)

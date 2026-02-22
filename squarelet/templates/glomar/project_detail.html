@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {{ project.title }}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_project_detail.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_project_detail">
+  <div class="content">
+    <div class="glomar-header">
+      <a href="{% url 'glomar:contract_detail' project.contract.pk %}" class="ghost button small">&larr; {{ project.contract.title }}</a>
+      <div class="glomar-header-actions">
+        <a href="{% url 'glomar:project_update' project.pk %}" class="ghost button small">Edit Project</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <header>
+        <h2>{{ project.title }}</h2>
+      </header>
+      <main>
+        <dl class="crm-fields">
+          <dt>Contract</dt>
+          <dd><a href="{% url 'glomar:contract_detail' project.contract.pk %}">{{ project.contract.title }}</a></dd>
+
+          <dt>Organization</dt>
+          <dd><a href="{% url 'glomar:organization_detail' project.contract.organization.slug %}">{{ project.contract.organization.name }}</a></dd>
+
+          <dt>Size</dt>
+          <dd>{{ project.get_size_display }}</dd>
+
+          <dt>Status</dt>
+          <dd>{{ project.get_status_display }}</dd>
+
+          <dt>Allotted Hours</dt>
+          <dd>{{ project.allotted_hours }}</dd>
+
+          <dt>Hours Used</dt>
+          <dd>{{ hours_used }}</dd>
+
+          <dt>Hours Remaining</dt>
+          <dd>
+            {{ hours_remaining }}
+            {% if is_over %}<span class="badge over-budget">Over budget</span>{% endif %}
+          </dd>
+
+          <dt>Description</dt>
+          <dd>{{ project.description|default:"—"|linebreaksbr }}</dd>
+        </dl>
+
+        <div style="margin-top: 1rem;">
+          <div class="crm-progress">
+            <div class="crm-progress-fill{% if is_over %} over{% elif usage_pct > 80 %} warning{% endif %}" style="width: {% if is_over %}100{% else %}{{ usage_pct }}{% endif %}%"></div>
+          </div>
+          <p style="font-size: var(--font-sm, 0.875rem); color: var(--gray-4, #5c717c); margin-top: 0.25rem;">
+            {{ usage_pct }}% used
+            {% if overage_pct %} ({{ overage_pct }}% over){% endif %}
+          </p>
+        </div>
+      </main>
+    </section>
+
+    <section id="work-logs">
+      <header>
+        <h2>Work Logs</h2>
+      </header>
+      <main>
+        <form method="post" action="{% url 'glomar:project_work_log' project.pk %}" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <div>
+            <label style="display: block; font-size: var(--font-xs, 0.75rem); color: var(--gray-4, #5c717c); margin-bottom: 0.125rem;">Username</label>
+            <input type="text" name="username" placeholder="Username" required style="padding: 0.375rem 0.5rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+          </div>
+          <div>
+            <label style="display: block; font-size: var(--font-xs, 0.75rem); color: var(--gray-4, #5c717c); margin-bottom: 0.125rem;">Hours</label>
+            <input type="number" name="hours" step="0.25" min="0.25" required style="padding: 0.375rem 0.5rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem); width: 5rem;">
+          </div>
+          <div>
+            <label style="display: block; font-size: var(--font-xs, 0.75rem); color: var(--gray-4, #5c717c); margin-bottom: 0.125rem;">Date</label>
+            <input type="date" name="work_date" required style="padding: 0.375rem 0.5rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem);">
+          </div>
+          <div style="flex: 1; min-width: 10rem;">
+            <label style="display: block; font-size: var(--font-xs, 0.75rem); color: var(--gray-4, #5c717c); margin-bottom: 0.125rem;">Description</label>
+            <input type="text" name="description" placeholder="What was done" required style="padding: 0.375rem 0.5rem; border: 1px solid var(--gray-2, #d8dee2); border-radius: 0.25rem; font-size: var(--font-sm, 0.875rem); width: 100%; box-sizing: border-box;">
+          </div>
+          <button type="submit" class="btn">Log Work</button>
+        </form>
+
+        {% if work_logs %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Date</th>
+              <th>Hours</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in work_logs %}
+            <tr>
+              <td><a href="{% url 'glomar:user_detail' log.user.username %}">{{ log.user.username }}</a></td>
+              <td>{{ log.work_date|date:"N j, Y" }}</td>
+              <td>{{ log.hours }}</td>
+              <td>{{ log.description }}</td>
+              <td>
+                <form method="post" action="{% url 'glomar:project_work_log' project.pk %}" style="display: inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove">
+                  <input type="hidden" name="work_log_id" value="{{ log.id }}">
+                  <button type="submit" class="btn" style="color: var(--red-5, #c0392b); font-size: var(--font-sm, 0.875rem);">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No work logged yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

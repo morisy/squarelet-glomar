@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: Research Contracts{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_contract_list.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_contract_list">
+  <div class="content">
+    <div class="glomar-header">
+      <a href="{% url 'glomar:dashboard' %}" class="ghost button small">&larr; Dashboard</a>
+    </div>
+
+    <section>
+      <header>
+        <h2>Research Contracts</h2>
+        <a href="{% url 'glomar:contract_create' %}" class="btn">New Contract</a>
+      </header>
+      <main>
+        {% if contracts %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Organization</th>
+              <th>Status</th>
+              <th>Hours</th>
+              <th>Projects</th>
+              <th>Dates</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contract in contracts %}
+            <tr>
+              <td><a href="{% url 'glomar:contract_detail' contract.pk %}">{{ contract.title }}</a></td>
+              <td><a href="{% url 'glomar:organization_detail' contract.organization.slug %}">{{ contract.organization.name }}</a></td>
+              <td>
+                {% if contract.status == "active" %}
+                  <span class="badge green">Active</span>
+                {% elif contract.status == "completed" %}
+                  <span class="badge">Completed</span>
+                {% else %}
+                  <span class="badge">Expired</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="crm-progress-mini">
+                  <span>{{ contract.hours_used|default_if_none:0 }} / {{ contract.total_hours }}</span>
+                  {% with used=contract.hours_used|default_if_none:0 %}
+                  {% widthratio used contract.total_hours 100 as pct %}
+                  <div class="crm-progress">
+                    <div class="crm-progress-fill{% if pct > 100 %} over{% elif pct > 80 %} warning{% endif %}" style="width: {% widthratio used contract.total_hours 100 %}%"></div>
+                  </div>
+                  {% endwith %}
+                </div>
+              </td>
+              <td>{{ contract.project_count }}</td>
+              <td>{{ contract.start_date|date:"N j, Y" }} — {{ contract.end_date|date:"N j, Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No research contracts yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

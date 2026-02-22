@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {{ contract.title }}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_contract_detail.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_contract_detail">
+  <div class="content">
+    <div class="glomar-header">
+      <a href="{% url 'glomar:contract_list' %}" class="ghost button small">&larr; All Contracts</a>
+      <div class="glomar-header-actions">
+        <a href="{% url 'glomar:contract_update' contract.pk %}" class="ghost button small">Edit Contract</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <header>
+        <h2>{{ contract.title }}</h2>
+      </header>
+      <main>
+        <dl class="crm-fields">
+          <dt>Organization</dt>
+          <dd><a href="{% url 'glomar:organization_detail' contract.organization.slug %}">{{ contract.organization.name }}</a></dd>
+
+          <dt>Status</dt>
+          <dd>
+            {% if contract.status == "active" %}
+              <span class="badge green">Active</span>
+            {% elif contract.status == "completed" %}
+              <span class="badge">Completed</span>
+            {% else %}
+              <span class="badge">Expired</span>
+            {% endif %}
+          </dd>
+
+          <dt>Total Hours</dt>
+          <dd>{{ contract.total_hours }}</dd>
+
+          <dt>Hours Used</dt>
+          <dd>{{ hours_used }}</dd>
+
+          <dt>Hours Remaining</dt>
+          <dd>
+            {{ hours_remaining }}
+            {% if hours_remaining < 0 %}<span class="badge over-budget">Over budget</span>{% endif %}
+          </dd>
+
+          <dt>Start Date</dt>
+          <dd>{{ contract.start_date|date:"N j, Y" }}</dd>
+
+          <dt>End Date</dt>
+          <dd>{{ contract.end_date|date:"N j, Y" }}</dd>
+
+          <dt>Notes</dt>
+          <dd>{{ contract.notes|default:"—"|linebreaksbr }}</dd>
+        </dl>
+
+        <div style="margin-top: 1rem;">
+          <div class="crm-progress">
+            <div class="crm-progress-fill{% if usage_pct > 100 %} over{% elif usage_pct > 80 %} warning{% endif %}" style="width: {% if usage_pct > 100 %}100{% else %}{{ usage_pct }}{% endif %}%"></div>
+          </div>
+          <p style="font-size: var(--font-sm, 0.875rem); color: var(--gray-4, #5c717c); margin-top: 0.25rem;">{{ usage_pct }}% used</p>
+        </div>
+      </main>
+    </section>
+
+    <section id="projects">
+      <header>
+        <h2>Projects</h2>
+        <a href="{% url 'glomar:project_create' contract.pk %}" class="btn">New Project</a>
+      </header>
+      <main>
+        {% if projects %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Size</th>
+              <th>Status</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for project in projects %}
+            <tr>
+              <td><a href="{% url 'glomar:project_detail' project.pk %}">{{ project.title }}</a></td>
+              <td>{{ project.get_size_display }}</td>
+              <td>{{ project.get_status_display }}</td>
+              <td>
+                <div class="crm-progress-mini">
+                  <span>{{ project.hours_used|default_if_none:0 }} / {{ project.allotted_hours }}</span>
+                  {% with used=project.hours_used|default_if_none:0 %}
+                  <div class="crm-progress">
+                    <div class="crm-progress-fill{% if used > project.allotted_hours %} over{% endif %}" style="width: {% widthratio used project.allotted_hours 100 %}%"></div>
+                  </div>
+                  {% endwith %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No projects yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: Research Projects{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_project_list.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_project_list">
+  <div class="content">
+    <div class="glomar-header">
+      <a href="{% url 'glomar:dashboard' %}" class="ghost button small">&larr; Dashboard</a>
+    </div>
+
+    <section>
+      <header>
+        <h2>Research Projects</h2>
+      </header>
+      <main>
+        {% if projects %}
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Organization</th>
+              <th>Contract</th>
+              <th>Size</th>
+              <th>Status</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for project in projects %}
+            <tr>
+              <td><a href="{% url 'glomar:project_detail' project.pk %}">{{ project.title }}</a></td>
+              <td><a href="{% url 'glomar:organization_detail' project.contract.organization.slug %}">{{ project.contract.organization.name }}</a></td>
+              <td><a href="{% url 'glomar:contract_detail' project.contract.pk %}">{{ project.contract.title }}</a></td>
+              <td>{{ project.get_size_display }}</td>
+              <td>{{ project.get_status_display }}</td>
+              <td>
+                <div class="crm-progress-mini">
+                  <span>{{ project.hours_used|default_if_none:0 }} / {{ project.allotted_hours }}</span>
+                  {% with used=project.hours_used|default_if_none:0 %}
+                  <div class="crm-progress">
+                    <div class="crm-progress-fill{% if used > project.allotted_hours %} over{% endif %}" style="width: {% widthratio used project.allotted_hours 100 %}%"></div>
+                  </div>
+                  {% endwith %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No research projects yet.</p>
+        {% endif %}
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block title %}Glomar: {% if object %}Edit {{ object.title }}{% else %}New Project{% endif %}{% endblock %}
+
+{% block vite %}
+{{ block.super }}
+{% vite_asset "frontend/views/glomar_project_form.ts" %}
+{% endblock %}
+
+{% block content %}
+<article id="glomar_project_form">
+  <div class="content">
+    <div class="glomar-header">
+      {% if object %}
+      <a href="{% url 'glomar:project_detail' object.pk %}" class="ghost button small">&larr; {{ object.title }}</a>
+      {% elif contract %}
+      <a href="{% url 'glomar:contract_detail' contract.pk %}" class="ghost button small">&larr; {{ contract.title }}</a>
+      {% else %}
+      <a href="{% url 'glomar:project_list' %}" class="ghost button small">&larr; All Projects</a>
+      {% endif %}
+    </div>
+
+    <section>
+      <header>
+        <h2>{% if object %}Edit Project{% else %}New Project{% endif %}</h2>
+      </header>
+      <main>
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+          <div style="margin-bottom: 1rem;">
+            <label for="{{ field.id_for_label }}" style="display: block; font-weight: 600; font-size: var(--font-sm, 0.875rem); color: var(--gray-4, #5c717c); margin-bottom: 0.25rem;">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <ul style="color: var(--red-5, #c0392b); font-size: var(--font-sm, 0.875rem); margin: 0.25rem 0 0; padding-left: 1.25rem;">
+              {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn">{% if object %}Save Changes{% else %}Create Project{% endif %}</button>
+        </form>
+      </main>
+    </section>
+  </div>
+</article>
+{% endblock content %}

@@ -77,4 +77,51 @@ urlpatterns = [
         views.ReceiptUpdateView.as_view(),
         name="email_receipt",
     ),
+    # Research Contracts
+    path(
+        "contracts/",
+        views.ContractListView.as_view(),
+        name="contract_list",
+    ),
+    path(
+        "contracts/create/",
+        views.ContractCreateView.as_view(),
+        name="contract_create",
+    ),
+    path(
+        "contracts/<int:pk>/",
+        views.ContractDetailView.as_view(),
+        name="contract_detail",
+    ),
+    path(
+        "contracts/<int:pk>/edit/",
+        views.ContractUpdateView.as_view(),
+        name="contract_update",
+    ),
+    # Research Projects
+    path(
+        "projects/",
+        views.ProjectListView.as_view(),
+        name="project_list",
+    ),
+    path(
+        "contracts/<int:contract_pk>/projects/create/",
+        views.ProjectCreateView.as_view(),
+        name="project_create",
+    ),
+    path(
+        "projects/<int:pk>/",
+        views.ProjectDetailView.as_view(),
+        name="project_detail",
+    ),
+    path(
+        "projects/<int:pk>/edit/",
+        views.ProjectUpdateView.as_view(),
+        name="project_update",
+    ),
+    path(
+        "projects/<int:pk>/log/",
+        views.WorkLogActionView.as_view(),
+        name="project_work_log",
+    ),
 ]
