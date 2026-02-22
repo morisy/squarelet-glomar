@@ -40,6 +40,21 @@
             Organizations
           </a>
         {% endif %}
+        {% if perms.glomar.view_glomar %}
+          <div class="_cls-glomarDropdown">
+            <button class="_cls-navItem _cls-glomarToggle">
+              {% include "core/icons/glomar.svg" %}
+              Glomar
+              {% include "core/icons/chevron-down.svg" %}
+            </button>
+            <div class="_cls-glomarMenu">
+              <a href="{% url 'glomar:dashboard' %}" class="_cls-glomarItem">Dashboard</a>
+              <a href="{% url 'glomar:event_list' %}" class="_cls-glomarItem">Events</a>
+              <a href="{% url 'glomar:mailing_list_list' %}" class="_cls-glomarItem">Mailing Lists</a>
+              <a href="{% url 'glomar:email_send_list' %}" class="_cls-glomarItem">Email Sends</a>
+            </div>
+          </div>
+        {% endif %}
       </nav>
       </nav>
       {% if request.user.is_authenticated %}
@@ -98,6 +113,7 @@
     servicesOpen = !servicesOpen;
     servicesDropdown.dataset.open = String(servicesOpen);
     closeOrgs();
+    closeGlomar();
   }
 
   function closeServices() {
@@ -120,6 +136,7 @@
     orgsOpen = !orgsOpen;
     orgsDropdown.dataset.open = String(orgsOpen);
     closeServices();
+    closeGlomar();
   }
 
   function closeOrgs() {
@@ -132,5 +149,30 @@
   if (orgsToggle) {
     orgsToggle.addEventListener('click', toggleOrgs);
     document.addEventListener('click', closeOrgs);
+  }
+
+  // Glomar dropdown
+  let glomarOpen = false;
+  const glomarToggle = document.querySelector('._cls-glomarToggle');
+  const glomarDropdown = document.querySelector('._cls-glomarDropdown');
+
+  function toggleGlomar(e) {
+    e.stopPropagation();
+    glomarOpen = !glomarOpen;
+    glomarDropdown.dataset.open = String(glomarOpen);
+    closeServices();
+    closeOrgs();
+  }
+
+  function closeGlomar() {
+    glomarOpen = false;
+    if (glomarDropdown) {
+      glomarDropdown.dataset.open = 'false';
+    }
+  }
+
+  if (glomarToggle) {
+    glomarToggle.addEventListener('click', toggleGlomar);
+    document.addEventListener('click', closeGlomar);
   }
 </script>

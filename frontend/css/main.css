@@ -1403,6 +1403,55 @@ button._cls-navItem:hover {
   justify-content: center;
 }
 
+/* Glomar dropdown */
+._cls-glomarDropdown {
+  position: relative;
+}
+
+._cls-glomarToggle {
+  cursor: pointer;
+}
+
+._cls-glomarToggle svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+._cls-glomarMenu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--white);
+  border: 1px solid var(--gray-2);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-2);
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  z-index: var(--z-dropdown);
+}
+
+._cls-glomarDropdown[data-open="true"] ._cls-glomarMenu {
+  display: block;
+}
+
+._cls-glomarItem {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-2);
+  text-decoration: none;
+  color: var(--gray-5);
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+._cls-glomarItem:hover {
+  background: var(--blue-1);
+  text-decoration: none;
+  color: var(--gray-5);
+}
+
 ._cls-profDropdown._cls-active ._cls-avatar {
   background: #f1f1f1;
   border-bottom: solid 2px transparent;

@@ -107,19 +107,16 @@ article[id^="glomar_"] .content section > main {
   flex-shrink: 0;
 }
 
-/* Staff toolbar */
-article[id^="glomar_"] .staff-toolbar {
+/* Glomar page header */
+article[id^="glomar_"] .glomar-header {
   display: flex;
-  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  padding: 0.25rem 0;
   justify-content: space-between;
   align-items: center;
   align-self: stretch;
-  background: var(--yellow-2, #ffe5ba);
-  border: 1px solid var(--yellow-3, #eccb6b);
-  border-radius: 0.5rem;
 }
 
-article[id^="glomar_"] .staff-toolbar .header-actions {
+article[id^="glomar_"] .glomar-header-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

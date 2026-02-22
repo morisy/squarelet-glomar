@@ -11,11 +11,8 @@
 {% block content %}
 <article id="glomar_event_form">
   <div class="content">
-    <div class="staff-toolbar">
-      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
-      <div class="header-actions">
-        <a href="{% url 'glomar:event_list' %}" class="btn">All Events</a>
-      </div>
+    <div class="glomar-header">
+      <a href="{% url 'glomar:event_list' %}" class="ghost button small">&larr; All Events</a>
     </div>
 
     <section>

@@ -11,11 +11,10 @@
 {% block content %}
 <article id="glomar_event_detail">
   <div class="content">
-    <div class="staff-toolbar">
-      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
-      <div class="header-actions">
-        <a href="{% url 'glomar:event_list' %}" class="btn">All Events</a>
-        <a href="{% url 'glomar:event_update' event.pk %}" class="btn">Edit Event</a>
+    <div class="glomar-header">
+      <a href="{% url 'glomar:event_list' %}" class="ghost button small">&larr; All Events</a>
+      <div class="glomar-header-actions">
+        <a href="{% url 'glomar:event_update' event.pk %}" class="ghost button small">Edit Event</a>
       </div>
     </div>
 

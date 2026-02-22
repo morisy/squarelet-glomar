@@ -28,11 +28,10 @@
   </aside>
 
   <div class="content">
-    <div class="staff-toolbar">
-      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
-      <div class="header-actions">
-        <a href="{% url 'users:detail' target_user.username %}" class="btn">User Profile</a>
-        <a href="{% url 'admin:users_user_change' target_user.pk %}" class="btn">Django Admin</a>
+    <div class="glomar-header">
+      <div class="glomar-header-actions">
+        <a href="{% url 'users:detail' target_user.username %}" class="ghost button small">User Profile</a>
+        <a href="{% url 'admin:users_user_change' target_user.pk %}" class="ghost button small">Django Admin</a>
       </div>
     </div>
 

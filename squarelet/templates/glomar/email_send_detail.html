@@ -11,11 +11,10 @@
 {% block content %}
 <article id="glomar_email_send_detail">
   <div class="content">
-    <div class="staff-toolbar">
-      <h3 class="glomar-brand">{% include "core/icons/glomar.svg" %} Glomar</h3>
-      <div class="header-actions">
-        <a href="{% url 'glomar:email_send_list' %}" class="btn">All Email Sends</a>
-        <a href="{% url 'glomar:email_send_update' email_send.pk %}" class="btn">Edit</a>
+    <div class="glomar-header">
+      <a href="{% url 'glomar:email_send_list' %}" class="ghost button small">&larr; All Email Sends</a>
+      <div class="glomar-header-actions">
+        <a href="{% url 'glomar:email_send_update' email_send.pk %}" class="ghost button small">Edit</a>
       </div>
     </div>
 
